@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Register — Spendly{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h1 class="card-title">Create an account</h1>
+
+  <form method="POST" action="/register" novalidate>
+    <div class="form-group">
+      <label for="name">Name</label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        value="{{ request.form.get('name', '') }}"
+        placeholder="Your name"
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        value="{{ request.form.get('email', '') }}"
+        placeholder="you@example.com"
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        placeholder="Choose a password"
+        required
+      >
+    </div>
+
+    <div class="form-group">
+      <label for="confirm_password">Confirm Password</label>
+      <input
+        type="password"
+        id="confirm_password"
+        name="confirm_password"
+        placeholder="Repeat your password"
+        required
+      >
+    </div>
+
+    <button type="submit" class="btn">Create account</button>
+  </form>
+
+  <p class="card-footer">
+    Already have an account? <a href="/login">Log in</a>
+  </p>
+</div>
+{% endblock %}
