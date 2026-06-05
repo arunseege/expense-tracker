@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Home — Spendly{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+
+  <div class="page-header">
+    <h1>Hello, {{ session["user_name"].split()[0] }}!</h1>
+    <p>Here's your spending overview.</p>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card accent">
+      <div class="stat-label">Total spent</div>
+      <div class="stat-value">&#8377;{{ "%.2f"|format(total) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Transactions</div>
+      <div class="stat-value {% if not expenses %}muted{% endif %}">
+        {{ expenses|length if expenses else "—" }}
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Top category</div>
+      <div class="stat-value {% if not top_category %}muted{% endif %}">
+        {{ top_category if top_category else "—" }}
+      </div>
+    </div>
+  </div>
+
+  {% if expenses %}
+  <div class="panel chart-panel">
+    <div class="panel-header">Spending by category</div>
+    <div class="chart-body">
+      <canvas id="categoryChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="panel">
+    <div class="panel-header">Recent expenses</div>
+    {% if expenses %}
+      <table class="expense-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th class="amount-col">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in expenses %}
+          <tr>
+            <td class="date-col">{{ e["date"] }}</td>
+            <td><span class="badge">{{ e["category"] }}</span></td>
+            <td class="desc-col">{{ e["description"] or "—" }}</td>
+            <td class="amount-col">&#8377;{{ "%.2f"|format(e["amount"]) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">
+        <span class="empty-state-icon">&#128184;</span>
+        <p>No expenses recorded yet.</p>
+        <p class="hint">Expense tracking is coming in the next step.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if expenses %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const labels = {{ category_totals.keys()|list|tojson }};
+  const data   = {{ category_totals.values()|list|tojson }};
+
+  const palette = [
+    "#4f6ef7", "#818cf8", "#f472b6", "#fb923c",
+    "#34d399", "#facc15", "#60a5fa", "#a78bfa"
+  ];
+
+  new Chart(document.getElementById("categoryChart"), {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: data,
+        backgroundColor: palette.slice(0, labels.length),
+        borderWidth: 2,
+        borderColor: "#fff",
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            font: { family: "Inter", size: 13 },
+            padding: 16,
+            usePointStyle: true,
+            pointStyleWidth: 10,
+            generateLabels: function(chart) {
+              const ds = chart.data.datasets[0];
+              return chart.data.labels.map((label, i) => ({
+                text: `${label}  ₹${ds.data[i].toLocaleString("en-IN", {minimumFractionDigits: 2})}`,
+                fillStyle: ds.backgroundColor[i],
+                strokeStyle: "#fff",
+                pointStyle: "circle",
+                index: i,
+                hidden: false,
+              }));
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const val = ctx.parsed;
+              const sum = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((val / sum) * 100).toFixed(1);
+              return ` ₹${val.toLocaleString("en-IN", {minimumFractionDigits: 2})}  (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
